@@ -11,9 +11,9 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/navigation";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Register">;
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [secureText, setSecureText] = useState(true);
@@ -21,8 +21,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Chào mừng bạn</Text>
-      <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+      <Text style={styles.title}>Tạo tài khoản mới</Text>
+      <Text style={styles.subtitle}>Đăng ký để bắt đầu sử dụng ứng dụng</Text>
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -51,15 +51,29 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.forgotButton}>
-        <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+      <View style={styles.inputContainer}>
+        <TextInput
+          key={secureText ? "secure" : "visible"}
+          placeholder="Nhập lại mật khẩu"
+          secureTextEntry={secureText}
+          style={[styles.input, { flex: 1 }]}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity onPress={() => setSecureText(!secureText)}>
+          <Ionicons
+            name={secureText ? "eye-off" : "eye"}
+            size={22}
+            color="gray"
+          />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.registerButton}>
+        <Text style={styles.registerButtonText}>Đăng ký</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton}>
-        <Text style={styles.loginButtonText}>Đăng nhập</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.orText}>Hoặc đăng nhập với</Text>
+      <Text style={styles.orText}>Hoặc đăng ký với</Text>
 
       <View style={styles.oauthContainer}>
         <TouchableOpacity style={styles.oauthButton}>
@@ -73,10 +87,10 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>Bạn chưa có tài khoản?</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-          <Text style={styles.signupLink}> Đăng ký ngay</Text>
+      <View style={styles.loginContainer}>
+        <Text style={styles.loginText}>Đã có tài khoản?</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.loginLink}> Đăng nhập</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -117,22 +131,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
   },
-  forgotButton: {
-    alignSelf: "flex-end",
-    marginBottom: 24,
-  },
-  forgotText: {
-    color: "#3498db",
-    fontSize: 14,
-  },
-  loginButton: {
-    backgroundColor: "#27ae60",
+  registerButton: {
+    backgroundColor: "#2980b9",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 20,
   },
-  loginButtonText: {
+  registerButtonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
@@ -162,16 +168,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
   },
-  signupContainer: {
+  loginContainer: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 10,
   },
-  signupText: {
+  loginText: {
     fontSize: 14,
     color: "gray",
   },
-  signupLink: {
+  loginLink: {
     fontSize: 14,
     color: "#3498db",
     fontWeight: "bold",
