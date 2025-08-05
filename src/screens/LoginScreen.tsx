@@ -5,11 +5,14 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
-import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/navigation";
+import { authService } from "src/services/auth.service";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
@@ -17,7 +20,40 @@ export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [secureText, setSecureText] = useState(true);
+  const [success, setSuccess] = useState(false);
   const navigation = useNavigation<NavigationProp>();
+
+  const handleLogin = async () => {
+    try {
+      console.log("📤 Sending login request:", username, password);
+      const res = await authService.login(username, password);
+      console.log("✅ Login success:", res);
+
+      await AsyncStorage.setItem("userId", res.userId);
+
+      setSuccess(true); // chuyển sang trạng thái thành công
+
+      // Sau 1.5 giây điều hướng sang trang khác (vd: Home hoặc Register)
+      setTimeout(() => {
+        setSuccess(false);
+        navigation.navigate("Register");
+      }, 1500);
+    } catch (err: any) {
+      console.error("❌ Login failed:", err);
+      Alert.alert("❌ Lỗi", err.message);
+    }
+  };
+
+  if (success) {
+    return (
+      <View style={styles.successContainer}>
+        <AntDesign name="checkcircle" size={80} color="green" />
+        <Text style={{ marginTop: 16, fontSize: 18, fontWeight: "bold" }}>
+          Đăng nhập thành công!
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -55,7 +91,7 @@ export default function LoginScreen() {
         <Text style={styles.forgotText}>Quên mật khẩu?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton}>
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginButtonText}>Đăng nhập</Text>
       </TouchableOpacity>
 
@@ -84,6 +120,12 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  successContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
   container: {
     flex: 1,
     paddingHorizontal: 24,
