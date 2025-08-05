@@ -1,66 +1,47 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
-import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { AntDesign } from "@expo/vector-icons";
+import CustomInput from "src/components/CustomInput";
+import { useAuth } from "src/hooks/useAuth";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../types/navigation";
-import { AntDesign } from "@expo/vector-icons";
-import { authService } from "src/services/auth.service";
+import { RootStackParamList } from "src/types/navigation";
+import { validateEmailOrPhone, validatePassword } from "src/utils/validation";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Register">;
 
 export default function RegisterScreen() {
-  const navigation = useNavigation<NavigationProp>();
-
+  const { register, loading, success, errorMsg, setErrorMsg } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [secureText, setSecureText] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const navigation = useNavigation<NavigationProp>();
 
-  const handleRegister = async () => {
+  const handleRegister = () => {
     setErrorMsg("");
 
-    if (!username || !password || !confirmPass) {
-      setErrorMsg("Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
-    if (password !== confirmPass) {
-      setErrorMsg("Mật khẩu nhập lại không khớp");
-      return;
+    const usernameError = validateEmailOrPhone(username);
+    if (usernameError) return setErrorMsg(usernameError);
+
+    const passwordError = validatePassword(password);
+    if (passwordError) return setErrorMsg(passwordError);
+
+    if (password !== confirmPassword) {
+      return setErrorMsg("Mật khẩu xác nhận không khớp");
     }
 
-    try {
-      setLoading(true);
-      await authService.register(username, password);
-      setSuccess(true);
-      setLoading(false);
-
-      setTimeout(() => {
-        navigation.navigate("Login");
-      }, 1500);
-    } catch (err: any) {
-      setLoading(false);
-      setErrorMsg(err.message || "Đăng ký thất bại");
-    }
+    register(username, password);
   };
 
   if (success) {
     return (
       <View style={styles.successContainer}>
         <AntDesign name="checkcircle" size={80} color="green" />
-        <Text style={{ marginTop: 16, fontSize: 18, fontWeight: "bold" }}>
-          Đăng ký thành công!
-        </Text>
+        <Text style={styles.successText}>Đăng ký thành công!</Text>
+        <TouchableOpacity onPress={() => navigation.replace("Login")}>
+          <Text style={styles.backToLogin}>Quay lại đăng nhập</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -68,83 +49,48 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tạo tài khoản mới</Text>
-      <Text style={styles.subtitle}>Đăng ký để bắt đầu sử dụng ứng dụng</Text>
+      <Text style={styles.subtitle}>Nhập thông tin để tiếp tục</Text>
+
+      <CustomInput
+        placeholder="Email hoặc số điện thoại"
+        value={username}
+        onChangeText={setUsername}
+        iconName="person-outline"
+      />
+      <CustomInput
+        placeholder="Mật khẩu"
+        value={password}
+        secureTextEntry={secureText}
+        onChangeText={setPassword}
+        iconName="lock-closed-outline" // icon khóa bên trái
+        suffixIconName={secureText ? "eye-off" : "eye"} // con mắt bên phải
+        onSuffixIconPress={() => setSecureText(!secureText)}
+      />
+
+      <CustomInput
+        placeholder="Xác nhận mật khẩu"
+        value={confirmPassword}
+        secureTextEntry={secureText}
+        onChangeText={setConfirmPassword}
+        iconName="lock-closed-outline" // icon khóa bên trái
+        suffixIconName={secureText ? "eye-off" : "eye"} // con mắt bên phải
+        onSuffixIconPress={() => setSecureText(!secureText)}
+      />
 
       {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Email hoặc số điện thoại"
-          style={styles.input}
-          value={username}
-          onChangeText={setUsername}
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          key={secureText ? "secure" : "visible"}
-          placeholder="Mật khẩu"
-          secureTextEntry={secureText}
-          style={[styles.input, { flex: 1 }]}
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity onPress={() => setSecureText(!secureText)}>
-          <Ionicons
-            name={secureText ? "eye-off" : "eye"}
-            size={22}
-            color="gray"
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          key={secureText ? "secure" : "visible"}
-          placeholder="Nhập lại mật khẩu"
-          secureTextEntry={secureText}
-          style={[styles.input, { flex: 1 }]}
-          value={confirmPass}
-          onChangeText={setConfirmPass}
-        />
-        <TouchableOpacity onPress={() => setSecureText(!secureText)}>
-          <Ionicons
-            name={secureText ? "eye-off" : "eye"}
-            size={22}
-            color="gray"
-          />
-        </TouchableOpacity>
-      </View>
 
       <TouchableOpacity
         style={styles.registerButton}
         onPress={handleRegister}
         disabled={loading}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.registerButtonText}>Đăng ký</Text>
-        )}
+        <Text style={styles.registerButtonText}>
+          {loading ? "Đang xử lý..." : "Đăng ký"}
+        </Text>
       </TouchableOpacity>
 
-      <Text style={styles.orText}>Hoặc đăng ký với</Text>
-
-      <View style={styles.oauthContainer}>
-        <TouchableOpacity style={styles.oauthButton}>
-          <FontAwesome name="google" size={20} color="#DB4437" />
-          <Text style={styles.oauthText}>Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.oauthButton}>
-          <FontAwesome name="apple" size={20} color="#000" />
-          <Text style={styles.oauthText}>Apple</Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.loginContainer}>
-        <Text style={styles.loginText}>Đã có tài khoản?</Text>
+        <Text style={styles.loginText}>Bạn đã có tài khoản?</Text>
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
           <Text style={styles.loginLink}> Đăng nhập</Text>
         </TouchableOpacity>
@@ -154,12 +100,6 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  successContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
   container: {
     flex: 1,
     paddingHorizontal: 24,
@@ -178,75 +118,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
   },
-  errorText: {
-    color: "red",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-    backgroundColor: "#fff",
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
+  successContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  successText: { marginTop: 16, fontSize: 18, fontWeight: "bold" },
+  backToLogin: { color: "#3498db", marginTop: 12, fontWeight: "bold" },
   registerButton: {
-    backgroundColor: "#2980b9",
+    backgroundColor: "#27ae60",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
-    marginBottom: 20,
+    marginTop: 16,
   },
-  registerButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  orText: {
-    textAlign: "center",
-    color: "gray",
-    marginBottom: 12,
-  },
-  oauthContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 24,
-  },
-  oauthButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-  },
-  oauthText: {
-    marginLeft: 8,
-    fontSize: 15,
-    fontWeight: "500",
-  },
+  registerButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  errorText: { color: "red", textAlign: "center", marginTop: 8 },
   loginContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 16,
   },
-  loginText: {
-    fontSize: 14,
-    color: "gray",
-  },
-  loginLink: {
-    fontSize: 14,
-    color: "#3498db",
-    fontWeight: "bold",
-  },
+  loginText: { fontSize: 14, color: "gray" },
+  loginLink: { fontSize: 14, color: "#3498db", fontWeight: "bold" },
 });
