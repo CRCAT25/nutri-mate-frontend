@@ -5,24 +5,72 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/navigation";
+import { AntDesign } from "@expo/vector-icons";
+import { authService } from "src/services/auth.service";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Register">;
 
 export default function RegisterScreen() {
+  const navigation = useNavigation<NavigationProp>();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
   const [secureText, setSecureText] = useState(true);
-  const navigation = useNavigation<NavigationProp>();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleRegister = async () => {
+    setErrorMsg("");
+
+    if (!username || !password || !confirmPass) {
+      setErrorMsg("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+    if (password !== confirmPass) {
+      setErrorMsg("Mật khẩu nhập lại không khớp");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await authService.register(username, password);
+      setSuccess(true);
+      setLoading(false);
+
+      setTimeout(() => {
+        navigation.navigate("Login");
+      }, 1500);
+    } catch (err: any) {
+      setLoading(false);
+      setErrorMsg(err.message || "Đăng ký thất bại");
+    }
+  };
+
+  if (success) {
+    return (
+      <View style={styles.successContainer}>
+        <AntDesign name="checkcircle" size={80} color="green" />
+        <Text style={{ marginTop: 16, fontSize: 18, fontWeight: "bold" }}>
+          Đăng ký thành công!
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tạo tài khoản mới</Text>
       <Text style={styles.subtitle}>Đăng ký để bắt đầu sử dụng ứng dụng</Text>
+
+      {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -57,8 +105,8 @@ export default function RegisterScreen() {
           placeholder="Nhập lại mật khẩu"
           secureTextEntry={secureText}
           style={[styles.input, { flex: 1 }]}
-          value={password}
-          onChangeText={setPassword}
+          value={confirmPass}
+          onChangeText={setConfirmPass}
         />
         <TouchableOpacity onPress={() => setSecureText(!secureText)}>
           <Ionicons
@@ -69,8 +117,16 @@ export default function RegisterScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.registerButton}>
-        <Text style={styles.registerButtonText}>Đăng ký</Text>
+      <TouchableOpacity
+        style={styles.registerButton}
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.registerButtonText}>Đăng ký</Text>
+        )}
       </TouchableOpacity>
 
       <Text style={styles.orText}>Hoặc đăng ký với</Text>
@@ -98,6 +154,12 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  successContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
   container: {
     flex: 1,
     paddingHorizontal: 24,
@@ -115,6 +177,11 @@ const styles = StyleSheet.create({
     color: "gray",
     textAlign: "center",
     marginBottom: 24,
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: 16,
   },
   inputContainer: {
     flexDirection: "row",

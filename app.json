@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "diet-app-mobile",
-    "slug": "diet-app-mobile",
+    "name": "nutri-mate-app",
+    "slug": "nutri-mate-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
